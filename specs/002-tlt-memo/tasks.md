@@ -85,7 +85,7 @@
 - [x] T021 [P] Добавить `tests/tlt-memo.spec.ts`: число позиций в показаниях и противопоказаниях, наличие полей прослеживаемости, отсутствие секций с `kind: exclusion-relative`
 - [x] T022 [P] Обновить `README.md`: как получить `source-documents/protocol.txt`, что делает `npm run verify:transcription`, как снять черновой статус после сверки
 - [x] T023 Прогнать полный DoD из [quickstart.md](./quickstart.md): `validate:data`, `verify:transcription`, `test`, `type-check`, `build`, `git diff --stat` и проверка офлайна на прод-сборке
-- [ ] T024 Закоммитить фичу; в `src/` не должно быть изменений вне `src/data/protocols/`
+- [x] T024 Закоммитить фичу; в `src/` не должно быть изменений вне `src/data/protocols/`
 
 ---
 
