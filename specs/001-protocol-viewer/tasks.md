@@ -120,10 +120,10 @@ Single project (SPA), корень репозитория: `src/`, `tests/`, `sc
 
 **Purpose**: полный офлайн, явные обновления, деплой на GitHub Pages
 
-- [ ] T034 [P] Иконки в `public/icons/`: pwa-192.png, pwa-512.png, maskable-512.png (простая абстрактная тёмная иконка, без имитации чужих брендов), favicon.svg
-- [ ] T035 Настроить vite-plugin-pwa в `vite.config.ts`: `registerType: 'prompt'`, `generateSW`, `globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}']`, manifest (name «Med Helper», `display: standalone`, тёмные `theme_color`/`background_color`, иконки 192/512 + maskable, `lang: 'ru'`) (зависит от T034)
-- [ ] T036 Компонент `src/components/UpdateBanner.vue` на `useRegisterSW`: баннер «Доступно обновление» + кнопка применения (никаких молчаливых обновлений — конституция IV); подключить в `src/App.vue` (зависит от T035)
-- [ ] T037 Создать `.github/workflows/deploy.yml`: официальный Pages-workflow — checkout → setup-node (Node 22, npm cache) → `npm ci` → `npm run validate:data` → `npm run test` → `BASE_PATH=/medical-refference/ npm run build` → configure-pages (`enablement: true`) → upload-pages-artifact (`dist/`) → deploy-pages; permissions `pages: write`, `id-token: write`; триггер push в `main`
+- [x] T034 [P] Иконки в `public/icons/`: pwa-192.png, pwa-512.png, maskable-512.png (простая абстрактная тёмная иконка, без имитации чужих брендов), favicon.svg
+- [x] T035 Настроить vite-plugin-pwa в `vite.config.ts`: `registerType: 'prompt'`, `generateSW`, `globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}']`, manifest (name «Med Helper», `display: standalone`, тёмные `theme_color`/`background_color`, иконки 192/512 + maskable, `lang: 'ru'`) (зависит от T034)
+- [x] T036 Компонент `src/components/UpdateBanner.vue` на `useRegisterSW`: баннер «Доступно обновление» + кнопка применения (никаких молчаливых обновлений — конституция IV); подключить в `src/App.vue` (зависит от T035)
+- [x] T037 Создать `.github/workflows/deploy.yml`: официальный Pages-workflow — checkout → setup-node (Node 22, npm cache) → `npm ci` → `npm run validate:data` → `npm run test` → `BASE_PATH=/medical-refference/ npm run build` → configure-pages (`enablement: true`) → upload-pages-artifact (`dist/`) → deploy-pages; permissions `pages: write`, `id-token: write`; триггер push в `main`
 - [ ] T038 Закоммитить, запушить в `main`; проверить: Actions зелёный, приложение открывается на https://plismikhail.github.io/medical-refference/, deep-link `#/protocol/demo-protocol` работает (зависит от T037)
 
 **Checkpoint**: сценарии 8–10 quickstart.md проходят (офлайн-перезагрузка, баннер обновления, деплой)

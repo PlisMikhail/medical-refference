@@ -1,0 +1,82 @@
+# Сборка и публикация PWA на GitHub Pages (T037, research R13).
+#
+# Официальный artifact-based путь Pages: ветка gh-pages не заводится, сторонние
+# экшены не используются — только actions/*. Перед публикацией обязательны
+# валидация данных протоколов (конституция V) и тесты: задеплоить сборку,
+# не прошедшую эти шаги, workflow не может физически — job'а деплоя не
+# начнётся.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Ручной перезапуск: например, после включения Pages или отката.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Параллельные деплои Pages конфликтуют за одно окружение. Уже идущий деплой
+# не отменяем (cancel-in-progress: false), иначе можно оставить сайт
+# в полуобновлённом состоянии.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Конституция V: протокол без полей прослеживаемости не уезжает в прод.
+      - name: Validate protocol data
+        run: npm run validate:data
+
+      - name: Run tests
+        run: npm run test
+
+      # BASE_PATH — единственное место, где вообще упоминается под-путь
+      # хостинга; в коде и конфиге его нет (research R4/R14).
+      - name: Build
+        run: npm run build
+        env:
+          BASE_PATH: /medical-refference/
+
+      # enablement: true включает Pages при первом прогоне, без ручного
+      # похода в Settings репозитория. Если у стандартного GITHUB_TOKEN не
+      # хватит прав на включение (administration: write), шаг сообщит об этом —
+      # тогда Pages включается один раз руками (Settings → Pages → GitHub
+      # Actions), и дальше workflow работает как есть.
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -7,13 +7,14 @@
  * в этом файле — дисклеймер, и та импортирована константой из
  * `constants/disclaimer.ts`, а не написана здесь (см. футер).
  *
- * Точки подключения будущих фаз помечены комментариями ниже:
- *   - Phase 7 (T036) UpdateBanner — явное обновление SW (конституция IV).
+ * Над шапкой смонтирован UpdateBanner (T036): явное обновление service worker
+ * по нажатию, без молчаливой подмены версии (конституция IV).
  */
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
 import DisclaimerGate from '@/components/DisclaimerGate.vue'
+import UpdateBanner from '@/components/UpdateBanner.vue'
 import { useDisclaimer } from '@/composables/useDisclaimer'
 import { useChromeHeight } from '@/composables/useStickyChrome'
 import { DISCLAIMER_TEXT } from '@/constants/disclaimer'
@@ -45,9 +46,13 @@ const { accepted, accept } = useDisclaimer()
 
     <template v-else>
       <!--
-        Phase 7 (T036): <UpdateBanner /> монтируется ЗДЕСЬ — над шапкой,
-        баннер «Доступно обновление» + кнопка применения.
+        Баннер обновления (T036, FR-015) — НАД шапкой и в обычном потоке.
+        Он намеренно не участвует в измерениях закреплённой обвязки
+        (useStickyChrome): шапка по-прежнему липнет к top: 0, а баннер просто
+        раздвигает контент вниз и уезжает при прокрутке. Обоснование —
+        в шапке самого компонента.
       -->
+      <UpdateBanner />
 
       <header
         ref="headerEl"
