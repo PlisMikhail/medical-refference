@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+  Тёмная тема — единственная (решение владельца, research R5).
+  Все цвета живут только здесь, компоненты используют утилиты Tailwind,
+  собранные из этих токенов (bg-surface, text-fg-muted, border-inclusion, ...).
+  Смена палитры = правка значений в этом блоке, без правок компонентов.
+
+  Приложение не является colorblind-safe — принятое осознанное решение
+  (один пользователь, известное цветовосприятие).
+*/
+/*
+  `static` — Tailwind v4 по умолчанию вырезает неиспользованные токены из :root.
+  Палитра здесь — контракт дизайна (в т.ч. для будущих компонентов и raw-CSS),
+  поэтому выводим её целиком: предсказуемость важнее ~0.3 КБ.
+*/
+@theme static {
+  /* --- Поверхности --- */
+  --color-background: #0b0f14;      /* фон страницы */
+  --color-surface: #131a22;         /* карточки, блоки */
+  --color-surface-raised: #1b242e;  /* приподнятые элементы: sticky-панель, чипы */
+  --color-surface-sunken: #080b0f;  /* утопленные зоны: таблицы, поля ввода */
+  --color-border: #2a3541;          /* разделители и рамки */
+  --color-border-strong: #3d4b5a;   /* акцентированные рамки, фокус */
+
+  /* --- Текст --- */
+  --color-fg: #e8eef5;              /* основной текст */
+  --color-fg-muted: #9fb0c0;        /* вторичный текст, метаданные */
+  --color-fg-subtle: #6b7d8f;       /* подписи, плейсхолдеры */
+  --color-fg-inverse: #0b0f14;      /* текст на ярких заливках */
+
+  /* --- Типы секций (kind) --- */
+  --color-inclusion: #34d399;             /* показания / критерии включения */
+  --color-exclusion-absolute: #f87171;    /* абсолютные противопоказания */
+  --color-exclusion-relative: #fbbf24;    /* относительные противопоказания */
+
+  /* --- Акценты блоков --- */
+  --color-warning: #fb923c;         /* WarningBlock */
+  --color-timer-note: #60a5fa;      /* TimerNoteBlock (временные окна) */
+  --color-accent: #38bdf8;          /* интерактив: ссылки, активные состояния */
+
+  /* --- Метрики --- */
+  --spacing-touch: 44px;            /* минимальный тач-таргет (spacing-токен) */
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    /* Приложение — справочник в кармане: подтягивания страницы быть не должно */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-fg);
+  }
+
+  body {
+    min-height: 100dvh;
+    /* Безопасные зоны выреза/жестов на Android/iOS */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+    Тач-таргеты >= 44x44 CSS px (constraint плана).
+    Базовое правило, а не утилита: интерактивные элементы получают его
+    по умолчанию, чтобы нарушение требовало явного действия.
+  */
+  button,
+  a[href],
+  summary,
+  select,
+  [role="button"],
+  input:not([type="hidden"]) {
+    min-height: var(--spacing-touch);
+    min-width: var(--spacing-touch);
+  }
+
+  /* Инлайновые ссылки внутри текста не должны раздувать строку */
+  p a[href],
+  li a[href] {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility touch-target {
+  min-height: var(--spacing-touch);
+  min-width: var(--spacing-touch);
+}
