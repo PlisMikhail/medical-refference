@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
- * Лента секций протокола (T025) — закреплённая под шапкой, горизонтально
- * прокручиваемая полоса чипов.
+ * Лента секций протокола (T025) — закреплённая горизонтально прокручиваемая
+ * полоса чипов. Прилипает под шапкой и панелью поиска: точка прилипания
+ * считается из ИЗМЕРЕННЫХ высот обоих (`sticky-under-search`), а не из
+ * подобранной константы — см. composables/useStickyChrome.ts.
  *
  * ПОЧЕМУ ТАБЫ, А НЕ ОГЛАВЛЕНИЕ (research R10): секция достижима в ОДИН тап из
  * любой точки прокрутки, без промежуточного открытия шторки. Сценарий —
@@ -194,7 +196,7 @@ onBeforeUnmount(() => {
   <nav
     ref="navEl"
     aria-label="Секции протокола"
-    class="sticky-under-header z-5 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+    class="sticky-under-search z-5 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
     data-testid="section-nav"
   >
     <div

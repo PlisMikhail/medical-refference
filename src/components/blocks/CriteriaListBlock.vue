@@ -11,9 +11,18 @@
  */
 import { computed } from 'vue'
 
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { CriteriaKind, CriteriaListBlock } from '@/types/protocol'
 
-const props = defineProps<{ block: CriteriaListBlock }>()
+const props = withDefaults(
+  defineProps<{
+    block: CriteriaListBlock
+    /** Адрес блока — из него складываются ключи полей для подсветки (T032). */
+    sectionId?: string
+    blockIndex?: number
+  }>(),
+  { sectionId: 'section', blockIndex: 0 },
+)
 
 /** kind → классы маркера/рамки. Только литералы (см. комментарий выше). */
 const KIND_STYLES = {
@@ -50,7 +59,14 @@ const style = computed(() =>
           :class="style.marker"
           aria-hidden="true"
         />
-        <span class="text-[15px] leading-relaxed text-fg">{{ item }}</span>
+        <span class="text-[15px] leading-relaxed text-fg">
+          <HighlightedText
+            :text="item"
+            :section-id="sectionId"
+            :block-index="blockIndex"
+            :field="`items.${index}`"
+          />
+        </span>
       </li>
     </ul>
   </div>

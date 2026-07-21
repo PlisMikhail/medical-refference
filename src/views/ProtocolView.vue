@@ -14,22 +14,35 @@
  * закреплённая лента секций. Она прилипает под шапкой приложения и остаётся
  * видимой из любой точки прокрутки (FR-003), в том числе в самом низу
  * документа; секции при этом получают отступ якоря под всю обвязку.
+ *
+ * Phase 6 (T031): над лентой секций — ProtocolSearch. Экран владеет
+ * состоянием поиска и раздаёт его вниз: панели — чтобы считать и
+ * переключать совпадения, блокам — чтобы подсвечивать. Запрос живёт ровно
+ * столько же, сколько открытый протокол (data-model), и нигде не хранится.
  */
 import { computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import ProtocolMeta from '@/components/ProtocolMeta.vue'
 import ProtocolRenderer from '@/components/ProtocolRenderer.vue'
+import ProtocolSearch from '@/components/ProtocolSearch.vue'
 import ProtocolSectionNav from '@/components/ProtocolSectionNav.vue'
 import { provideChecklistState } from '@/composables/useChecklistState'
 import { useDevValidation } from '@/composables/useDevValidation'
 import type { ProtocolErrorCode } from '@/composables/useProtocols'
 import { useProtocols } from '@/composables/useProtocols'
+import { provideProtocolSearch } from '@/composables/useProtocolSearch'
 
 const props = defineProps<{ id: string }>()
 
 const { protocol, loading, error, loadProtocol } = useProtocols()
 const { issues, validate } = useDevValidation()
+
+/**
+ * Поиск по ОТКРЫТОМУ протоколу (FR-008): состояние привязано к этой ссылке,
+ * поэтому за пределы текущего документа поиск не выходит по построению.
+ */
+const search = provideProtocolSearch(protocol)
 
 /**
  * Хранилище отметок чек-листов живёт ровно столько, сколько этот экран
@@ -51,6 +64,8 @@ watch(
   () => props.id,
   async (id) => {
     checklist.clear()
+    // Другой протокол — другой документ: чужая строка поиска здесь не нужна.
+    search.reset()
     const loaded = await loadProtocol(id)
     // DEV-only: в прод-сборке no-op, Ajv в бандл не попадает.
     await validate(loaded)
@@ -105,12 +120,19 @@ watch(
       </div>
 
       <!--
+        FR-008: поиск живёт над лентой секций и остаётся на экране при
+        прокрутке — кнопки «дальше/назад» нужны именно тогда, когда документ
+        уже уехал к очередному совпадению.
+      -->
+      <ProtocolSearch class="mt-5" />
+
+      <!--
         FR-003: один тап до любой секции из любой точки прокрутки. Лента
         стоит здесь, а не над метаданными, чтобы прилипать сразу над
         содержимым; переход делает scrollIntoView, адрес маршрута
         (`#/protocol/:id`) при этом не трогается — хеш занят роутером.
       -->
-      <ProtocolSectionNav class="mt-5" :sections="protocol.sections" />
+      <ProtocolSectionNav :sections="protocol.sections" />
 
       <ProtocolRenderer class="mt-5" :protocol="protocol" />
     </template>

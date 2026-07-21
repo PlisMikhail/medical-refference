@@ -9,9 +9,18 @@
  * `label` опционален (тип `TimerNoteBlock`); при отсутствии плашка
  * рендерится без подписи.
  */
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { TimerNoteBlock } from '@/types/protocol'
 
-defineProps<{ block: TimerNoteBlock }>()
+withDefaults(
+  defineProps<{
+    block: TimerNoteBlock
+    /** Адрес блока — из него складываются ключи полей для подсветки (T032). */
+    sectionId?: string
+    blockIndex?: number
+  }>(),
+  { sectionId: 'section', blockIndex: 0 },
+)
 </script>
 
 <template>
@@ -25,10 +34,20 @@ defineProps<{ block: TimerNoteBlock }>()
       class="mb-1 text-xs font-semibold uppercase tracking-wide text-timer-note"
       data-testid="timer-note-label"
     >
-      {{ block.label }}
+      <HighlightedText
+        :text="block.label ?? ''"
+        :section-id="sectionId"
+        :block-index="blockIndex"
+        field="label"
+      />
     </p>
     <p class="text-[15px] leading-relaxed text-fg whitespace-pre-line">
-      {{ block.body }}
+      <HighlightedText
+        :text="block.body"
+        :section-id="sectionId"
+        :block-index="blockIndex"
+        field="body"
+      />
     </p>
   </div>
 </template>

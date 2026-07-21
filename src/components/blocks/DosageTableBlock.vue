@@ -9,15 +9,29 @@
  * Горизонтальный скролл живёт ВНУТРИ обёртки блока (`overflow-x-auto`),
  * поэтому страница целиком по горизонтали не едет даже на 380px.
  */
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { DosageTableBlock } from '@/types/protocol'
 
-defineProps<{ block: DosageTableBlock }>()
+withDefaults(
+  defineProps<{
+    block: DosageTableBlock
+    /** Адрес блока — из него складываются ключи полей для подсветки (T032). */
+    sectionId?: string
+    blockIndex?: number
+  }>(),
+  { sectionId: 'section', blockIndex: 0 },
+)
 </script>
 
 <template>
   <div class="rounded-lg border border-border bg-surface" data-block="dosage-table">
     <p v-if="block.title" class="px-3 pt-3 pb-2 text-sm font-semibold text-fg">
-      {{ block.title }}
+      <HighlightedText
+        :text="block.title ?? ''"
+        :section-id="sectionId"
+        :block-index="blockIndex"
+        field="title"
+      />
     </p>
 
     <!-- Скроллится только эта обёртка, не body -->
@@ -31,7 +45,12 @@ defineProps<{ block: DosageTableBlock }>()
               scope="col"
               class="border-b border-border px-3 py-2 align-top font-semibold text-fg-muted whitespace-nowrap"
             >
-              {{ column }}
+              <HighlightedText
+                :text="column"
+                :section-id="sectionId"
+                :block-index="blockIndex"
+                :field="`columns.${index}`"
+              />
             </th>
           </tr>
         </thead>
@@ -46,7 +65,12 @@ defineProps<{ block: DosageTableBlock }>()
               :key="cellIndex"
               class="px-3 py-2 align-top text-fg"
             >
-              {{ cell }}
+              <HighlightedText
+                :text="cell"
+                :section-id="sectionId"
+                :block-index="blockIndex"
+                :field="`rows.${rowIndex}.${cellIndex}`"
+              />
             </td>
           </tr>
         </tbody>

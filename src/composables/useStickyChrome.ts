@@ -11,11 +11,14 @@ import type { ComputedRef, Ref } from 'vue'
  *
  * КАК: каждый элемент обвязки регистрирует себя здесь, его фактическая высота
  * измеряется (ResizeObserver) и публикуется в CSS-переменную на <html>:
- *   --app-header-height   ← <header> из App.vue
- *   --section-nav-height  ← лента секций из ProtocolSectionNav.vue
- * Дальше CSS считает смещения сам (утилиты `sticky-under-header` и
- * `scroll-under-chrome` в assets/theme.css), а JS-потребителям доступна
- * суммарная высота `chromeHeight` (нужна для rootMargin IntersectionObserver).
+ *   --app-header-height       ← <header> из App.vue
+ *   --protocol-search-height  ← панель поиска из ProtocolSearch.vue
+ *   --section-nav-height      ← лента секций из ProtocolSectionNav.vue
+ * Порядок слотов = порядок в DOM: панель поиска липнет под шапкой, лента
+ * секций — под шапкой и панелью. Дальше CSS считает смещения сам (утилиты
+ * `sticky-under-header`, `sticky-under-search` и `scroll-under-chrome` в
+ * assets/theme.css), а JS-потребителям доступна суммарная высота
+ * `chromeHeight` (нужна для rootMargin IntersectionObserver).
  *
  * Деградация: без ResizeObserver — разовое измерение + пересчёт по resize
  * окна; без DOM (SSR/тест) высота остаётся 0, а CSS берёт fallback 0px.
@@ -23,24 +26,27 @@ import type { ComputedRef, Ref } from 'vue'
  */
 
 /** Слот обвязки: у каждого своя CSS-переменная и своя измеренная высота. */
-export type ChromeSlot = 'header' | 'section-nav'
+export type ChromeSlot = 'header' | 'search' | 'section-nav'
 
 const CSS_VAR: Record<ChromeSlot, string> = {
   header: '--app-header-height',
+  search: '--protocol-search-height',
   'section-nav': '--section-nav-height',
 }
 
 const measured: Record<ChromeSlot, Ref<number>> = {
   header: ref(0),
+  search: ref(0),
   'section-nav': ref(0),
 }
 
 /**
- * Суммарная высота закреплённой обвязки в пикселях: шапка + лента секций.
- * Ровно на столько верх вьюпорта «занят» и не годится для чтения.
+ * Суммарная высота закреплённой обвязки в пикселях: шапка + панель поиска +
+ * лента секций. Ровно на столько верх вьюпорта «занят» и не годится для
+ * чтения.
  */
 export const chromeHeight: ComputedRef<number> = computed(
-  () => measured.header.value + measured['section-nav'].value,
+  () => measured.header.value + measured.search.value + measured['section-nav'].value,
 )
 
 /**

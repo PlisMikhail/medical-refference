@@ -5,24 +5,29 @@
  * Абзацы приходят одной строкой и разделяются `\n\n` (data-model, тип
  * `TextBlock`). Компонент только разбивает и рендерит — никакого
  * медицинского текста здесь нет и быть не может (конституция III).
+ *
+ * T032: разбиение на абзацы взято из `splitParagraphs` — той же функции,
+ * которой пользуется сборщик поискового индекса. Общая функция здесь не
+ * украшение: смещение совпадения считается ВНУТРИ абзаца, и разойдись эти
+ * два разбиения — подсветка резала бы текст мимо границ совпадения.
  */
 import { computed } from 'vue'
 
+import HighlightedText from '@/components/HighlightedText.vue'
+import { splitParagraphs } from '@/composables/useProtocolSearch'
 import type { TextBlock } from '@/types/protocol'
 
-const props = defineProps<{ block: TextBlock }>()
-
-/**
- * Разбиение на абзацы: пустая строка (с любыми пробелами и CRLF) —
- * разделитель. Пустые куски отбрасываются, чтобы лишние переводы строк
- * в данных не давали пустых <p>.
- */
-const paragraphs = computed(() =>
-  props.block.body
-    .split(/\r?\n\s*\r?\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter((paragraph) => paragraph.length > 0),
+const props = withDefaults(
+  defineProps<{
+    block: TextBlock
+    /** Адрес блока — из него складываются ключи полей для подсветки. */
+    sectionId?: string
+    blockIndex?: number
+  }>(),
+  { sectionId: 'section', blockIndex: 0 },
 )
+
+const paragraphs = computed(() => splitParagraphs(props.block.body))
 </script>
 
 <template>
@@ -32,7 +37,12 @@ const paragraphs = computed(() =>
       :key="index"
       class="text-[15px] leading-relaxed text-fg whitespace-pre-line"
     >
-      {{ paragraph }}
+      <HighlightedText
+        :text="paragraph"
+        :section-id="sectionId"
+        :block-index="blockIndex"
+        :field="`body.${index}`"
+      />
     </p>
   </div>
 </template>

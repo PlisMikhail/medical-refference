@@ -6,9 +6,18 @@
  * требует правок компонента (FR-004 «не зашито в компоненты»).
  * Текст целиком приходит из данных (конституция III).
  */
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { WarningBlock } from '@/types/protocol'
 
-defineProps<{ block: WarningBlock }>()
+withDefaults(
+  defineProps<{
+    block: WarningBlock
+    /** Адрес блока — из него складывается ключ поля для подсветки (T032). */
+    sectionId?: string
+    blockIndex?: number
+  }>(),
+  { sectionId: 'section', blockIndex: 0 },
+)
 </script>
 
 <template>
@@ -18,7 +27,12 @@ defineProps<{ block: WarningBlock }>()
     role="note"
   >
     <p class="text-[15px] leading-relaxed text-fg whitespace-pre-line">
-      {{ block.body }}
+      <HighlightedText
+        :text="block.body"
+        :section-id="sectionId"
+        :block-index="blockIndex"
+        field="body"
+      />
     </p>
   </div>
 </template>

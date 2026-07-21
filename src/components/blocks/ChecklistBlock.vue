@@ -9,13 +9,17 @@
  * FR-007: состояние живёт в useChecklistState и умирает вместе с экраном
  * протокола — здесь нет ни одного обращения к storage.
  */
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { ChecklistBlock } from '@/types/protocol'
 import { checklistBlockKey, useChecklistState } from '@/composables/useChecklistState'
 
 const props = withDefaults(
   defineProps<{
     block: ChecklistBlock
-    /** Секция-владелец и позиция блока — вместе дают ключ состояния. */
+    /**
+     * Секция-владелец и позиция блока — вместе дают и ключ эфемерного
+     * состояния отметок, и ключи текстовых полей для подсветки поиска (T032).
+     */
     sectionId?: string
     blockIndex?: number
   }>(),
@@ -44,7 +48,12 @@ const blockKey = () => checklistBlockKey(props.sectionId, props.blockIndex)
           class="text-[15px] leading-snug"
           :class="state.isMarked(blockKey(), index) ? 'text-fg' : 'text-fg-muted'"
         >
-          {{ item }}
+          <HighlightedText
+            :text="item"
+            :section-id="sectionId"
+            :block-index="blockIndex"
+            :field="`items.${index}`"
+          />
         </span>
       </label>
     </li>

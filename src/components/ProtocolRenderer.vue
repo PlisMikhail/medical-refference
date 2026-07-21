@@ -14,10 +14,18 @@
  *  - T026 — `scroll-under-chrome` вместо прежнего `scroll-mt-20`: отступ
  *    якоря считается из измеренных высот шапки и ленты секций, а не из
  *    подобранной руками константы (см. composables/useStickyChrome.ts).
+ *
+ * PHASE 6 (T032): каждому блоку сообщается его адрес — id секции и позиция в
+ * ней. Из адреса складывается ключ текстового поля, по которому компонент
+ * подсветки находит «свои» совпадения поиска. Рендерер по-прежнему ничего не
+ * знает о типах блоков: адрес одинаков для всех.
  */
+import HighlightedText from '@/components/HighlightedText.vue'
 import type { Block, Protocol, Section, SectionKind } from '@/types/protocol'
+import { isKnownBlock } from '@/types/protocol'
 import { resolveBlockComponent } from '@/components/blocks/registry'
 import { checklistBlockKey } from '@/composables/useChecklistState'
+import { SECTION_TITLE_BLOCK_INDEX } from '@/composables/useProtocolSearch'
 
 defineProps<{ protocol: Protocol }>()
 
@@ -47,15 +55,20 @@ function headingStyle(section: Section): string {
 }
 
 /**
- * Пропсы конкретного блока. Всем — `block`; чек-листу дополнительно координаты
- * (`sectionId`, `blockIndex`), из которых складывается ключ его эфемерного
- * состояния `sectionId:blockIndex` (data-model).
+ * Пропсы конкретного блока.
+ *
+ * Известным блокам, кроме самого блока, передаётся его адрес
+ * (`sectionId`, `blockIndex`): из него складываются и ключ эфемерного
+ * состояния чек-листа `sectionId:blockIndex` (data-model), и ключи текстовых
+ * полей для подсветки поиска (T032).
+ *
+ * Блок неизвестного типа адреса не получает: его содержимое не отрисовано
+ * (FR-006), подсвечивать нечего, а лишние пропсы осели бы атрибутами на
+ * плашке фоллбэка.
  */
 function blockProps(section: Section, block: Block, blockIndex: number) {
-  if (block.type === 'checklist') {
-    return { block, sectionId: section.id, blockIndex }
-  }
-  return { block }
+  if (!isKnownBlock(block)) return { block }
+  return { block, sectionId: section.id, blockIndex }
 }
 
 /** Стабильный ключ элемента списка: позиция + тип. */
@@ -77,7 +90,12 @@ function blockElementKey(section: Section, block: Block, blockIndex: number): st
         class="mb-3 border-b border-l-4 pb-1.5 pl-2.5 text-base font-semibold"
         :class="headingStyle(section)"
       >
-        {{ section.title }}
+        <HighlightedText
+          :text="section.title"
+          :section-id="section.id"
+          :block-index="SECTION_TITLE_BLOCK_INDEX"
+          field="title"
+        />
       </h2>
 
       <div class="flex flex-col gap-3">
