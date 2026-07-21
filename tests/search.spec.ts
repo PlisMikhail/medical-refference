@@ -13,7 +13,7 @@ import {
 } from '../src/composables/useProtocolSearch'
 import type { Protocol } from '../src/types/protocol'
 
-import demoProtocolJson from '../src/data/protocols/demo-protocol.json'
+import demoProtocolJson from './fixtures/demo-protocol.json'
 
 /**
  * Контракт поиска по открытому протоколу (T033; US3, FR-008, SC-005).

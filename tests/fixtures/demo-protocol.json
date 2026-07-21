@@ -1,5 +1,5 @@
 {
-  "$schema": "../schema/protocol.schema.json",
+  "$schema": "../../src/data/schema/protocol.schema.json",
   "id": "demo-protocol",
   "title": "Демонстрационный протокол (образец структуры)",
   "version": "0.1.0-demo",
