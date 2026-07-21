@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://med-helper.local/schema/protocol.schema.json",
+  "title": "Clinical protocol document",
+  "description": "Документ протокола. Медицинский контент живёт только в таких файлах; поля прослеживаемости обязательны (конституция, принцип V).",
+  "type": "object",
+  "required": ["id", "title", "version", "sourceDocument", "sourceDate", "lastReviewed", "sections"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "sourceDocument": { "type": "string", "minLength": 1 },
+    "sourceDate": { "type": "string", "format": "date" },
+    "lastReviewed": { "type": "string", "format": "date" },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/section" }
+    }
+  },
+  "$defs": {
+    "section": {
+      "type": "object",
+      "required": ["id", "title", "blocks"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "title": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": ["default", "inclusion", "exclusion-absolute", "exclusion-relative"],
+          "default": "default"
+        },
+        "blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/block" }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "minLength": 1 } },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "text" } } },
+          "then": { "$ref": "#/$defs/textBlock" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "warning" } } },
+          "then": { "$ref": "#/$defs/warningBlock" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "timer-note" } } },
+          "then": { "$ref": "#/$defs/timerNoteBlock" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "criteria-list" } } },
+          "then": { "$ref": "#/$defs/criteriaListBlock" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "dosage-table" } } },
+          "then": { "$ref": "#/$defs/dosageTableBlock" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "checklist" } } },
+          "then": { "$ref": "#/$defs/checklistBlock" }
+        }
+      ]
+    },
+    "textBlock": {
+      "type": "object",
+      "required": ["type", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "text" },
+        "body": { "type": "string", "minLength": 1 }
+      }
+    },
+    "warningBlock": {
+      "type": "object",
+      "required": ["type", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "warning" },
+        "body": { "type": "string", "minLength": 1 }
+      }
+    },
+    "timerNoteBlock": {
+      "type": "object",
+      "required": ["type", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "timer-note" },
+        "label": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 }
+      }
+    },
+    "criteriaListBlock": {
+      "type": "object",
+      "required": ["type", "kind", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "criteria-list" },
+        "kind": { "enum": ["inclusion", "exclusion-absolute", "exclusion-relative"] },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "dosageTableBlock": {
+      "type": "object",
+      "required": ["type", "columns", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "dosage-table" },
+        "title": { "type": "string", "minLength": 1 },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "checklistBlock": {
+      "type": "object",
+      "required": ["type", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "checklist" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
