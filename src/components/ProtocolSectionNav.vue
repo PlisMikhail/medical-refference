@@ -67,6 +67,35 @@ useChromeHeight(navEl, 'section-nav')
 const intersecting = new Set<string>()
 let observer: IntersectionObserver | null = null
 
+/**
+ * Идёт ли сейчас переход по тапу. На это время выбор активной секции
+ * заморожен: цель известна, а промежуточные секции, мелькающие по дороге,
+ * не должны её перебивать.
+ */
+let programmaticScroll = false
+let scrollSettleTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * Страховка на случай, если `scrollend` не поддержан или скролл никуда не
+ * поехал (секция уже на месте) — иначе заморозка осталась бы навсегда.
+ */
+const SCROLL_SETTLE_MS = 800
+
+function endProgrammaticScroll(): void {
+  clearTimeout(scrollSettleTimer)
+  scrollSettleTimer = undefined
+  if (!programmaticScroll) return
+  programmaticScroll = false
+  // Скролл закончился — сверяем подсветку с тем, что реально на экране.
+  pickActive()
+}
+
+function beginProgrammaticScroll(): void {
+  programmaticScroll = true
+  clearTimeout(scrollSettleTimer)
+  scrollSettleTimer = setTimeout(endProgrammaticScroll, SCROLL_SETTLE_MS)
+}
+
 function sectionElements(): HTMLElement[] {
   return props.sections
     .map((section) => document.getElementById(section.id))
@@ -90,6 +119,12 @@ function atDocumentBottom(): boolean {
  * одной, прежняя остаётся активной: мигающая лента хуже слегка устаревшей.
  */
 function pickActive(): void {
+  // Пока страница едет к выбранной секции, вьюпорт проходит через все
+  // промежуточные — и наблюдатель честно подсвечивал бы каждую. Врач видел бы
+  // мечущуюся ленту вместо перехода. Цель тапа уже известна, менять её по
+  // дороге незачем.
+  if (programmaticScroll) return
+
   if (atDocumentBottom()) {
     const last = props.sections.at(-1)
     if (last) activeId.value = last.id
@@ -143,14 +178,34 @@ async function refreshObserver(): Promise<void> {
 /* Переход по тапу                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Подтягивает чип в видимую часть ленты (по центру, если хватает места). */
+/** Запас у края ленты: чип не должен упираться в границу впритык. */
+const REVEAL_GUTTER = 16
+
+/**
+ * Подтягивает чип в видимую часть ленты — и только если он оттуда ушёл.
+ *
+ * Раньше чип центрировался всегда, поэтому лента ехала даже от тапа по
+ * полностью видимому чипу. Теперь она стоит на месте, пока активный чип виден,
+ * и сдвигается ровно настолько, чтобы показать уехавший.
+ */
 function revealChip(id: string): void {
   const strip = stripEl.value
   const chip = strip?.querySelector<HTMLElement>(`[data-section-chip="${id}"]`)
   if (!strip || !chip) return
 
-  const centered = chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2
-  const left = Math.max(0, Math.min(centered, strip.scrollWidth - strip.clientWidth))
+  const viewLeft = strip.scrollLeft
+  const viewRight = viewLeft + strip.clientWidth
+  const chipLeft = chip.offsetLeft
+  const chipRight = chipLeft + chip.offsetWidth
+
+  let target: number
+  if (chipLeft - REVEAL_GUTTER < viewLeft) target = chipLeft - REVEAL_GUTTER
+  else if (chipRight + REVEAL_GUTTER > viewRight)
+    target = chipRight + REVEAL_GUTTER - strip.clientWidth
+  else return // чип виден целиком — ленту не трогаем вовсе
+
+  const left = Math.max(0, Math.min(target, strip.scrollWidth - strip.clientWidth))
+  if (Math.abs(left - viewLeft) < 1) return
 
   if (typeof strip.scrollTo === 'function') strip.scrollTo({ left, behavior: 'smooth' })
   else strip.scrollLeft = left
@@ -160,10 +215,13 @@ function revealChip(id: string): void {
  * Тап по чипу: плавный скролл к секции. Отступ под обвязку берёт на себя
  * `scroll-under-chrome` (scroll-margin-top секции), поэтому здесь достаточно
  * `block: 'start'` — никакой ручной арифметики со смещениями.
+ *
+ * `revealChip` здесь не вызывается: его дёрнет `watch(activeId)`, а два
+ * скролла ленты подряд как раз и выглядели дёрганьем.
  */
 function goToSection(section: Section): void {
+  beginProgrammaticScroll()
   activeId.value = section.id
-  revealChip(section.id)
   document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
@@ -174,6 +232,9 @@ function goToSection(section: Section): void {
 onMounted(() => {
   void refreshObserver()
   window.addEventListener('scroll', pickActive, { passive: true })
+  // Точный сигнал «скролл докатился». Поддержан не везде, поэтому дублируется
+  // таймером в beginProgrammaticScroll.
+  window.addEventListener('scrollend', endProgrammaticScroll)
 })
 
 // Другой протокол или изменившаяся высота обвязки — пересобираем наблюдатель:
@@ -188,7 +249,9 @@ watch(activeId, (id) => revealChip(id))
 
 onBeforeUnmount(() => {
   disconnectObserver()
+  clearTimeout(scrollSettleTimer)
   window.removeEventListener('scroll', pickActive)
+  window.removeEventListener('scrollend', endProgrammaticScroll)
 })
 </script>
 
