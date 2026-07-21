@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://med-helper.local/schema/index.schema.json",
+  "title": "Protocol registry (index.json)",
+  "description": "Реестр протоколов. Порядок записей = порядок на главном экране. title/version/sourceDate обязаны совпадать с файлом протокола (кросс-проверка validate:data).",
+  "type": "object",
+  "required": ["protocols"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "protocols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "version", "sourceDate"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "title": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "sourceDate": { "type": "string", "format": "date" }
+        }
+      }
+    }
+  }
+}

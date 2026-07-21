@@ -1,0 +1,11 @@
+{
+  "$schema": "../schema/index.schema.json",
+  "protocols": [
+    {
+      "id": "demo-protocol",
+      "title": "Демонстрационный протокол (образец структуры)",
+      "version": "0.1.0-demo",
+      "sourceDate": "2026-01-01"
+    }
+  ]
+}
