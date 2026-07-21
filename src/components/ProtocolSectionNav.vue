@@ -199,9 +199,15 @@ onBeforeUnmount(() => {
     class="sticky-under-search z-5 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
     data-testid="section-nav"
   >
+    <!--
+      `p-0.5` — место для обводки активного чипа. `overflow-x-auto` по спеке
+      лишает контейнер вертикального `visible`, поэтому внешняя обводка
+      (`ring-2`) обрезалась бы снизу и сверху, а у крайних чипов — по бокам.
+      Отступ равен толщине обводки: чипы сдвигаются на 2px, срез уходит.
+    -->
     <div
       ref="stripEl"
-      class="relative flex gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:none]"
+      class="relative flex gap-2 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none]"
     >
       <button
         v-for="section in sections"
