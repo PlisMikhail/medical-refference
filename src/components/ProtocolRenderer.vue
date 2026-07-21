@@ -6,18 +6,45 @@
  * реестр. Новый тип блока не требует правок этого файла (конституция III,
  * «каркас, а не набор частных случаев»).
  *
- * ШОВ ДЛЯ PHASE 4:
- *  - T027 покрасит заголовок/рамку секции токеном `section.kind`
- *    (пометка `data-kind` уже проставлена — красить будет CSS/класс-карта);
- *  - T026 повесит `scroll-margin-top` под высоту sticky-панели —
- *    здесь для этого уже есть `scroll-mt-*` на секции.
- * Сейчас цветовая маркировка секций НЕ реализуется намеренно.
+ * PHASE 4:
+ *  - T027 — цветовая маркировка секции по `kind` (FR-004): три значимых типа
+ *    секций различаются с первого взгляда, без чтения заголовка. Различение
+ *    только цветом — осознанное решение владельца (spec, Assumptions),
+ *    значков-дублёров здесь нет;
+ *  - T026 — `scroll-under-chrome` вместо прежнего `scroll-mt-20`: отступ
+ *    якоря считается из измеренных высот шапки и ленты секций, а не из
+ *    подобранной руками константы (см. composables/useStickyChrome.ts).
  */
-import type { Block, Protocol, Section } from '@/types/protocol'
+import type { Block, Protocol, Section, SectionKind } from '@/types/protocol'
 import { resolveBlockComponent } from '@/components/blocks/registry'
 import { checklistBlockKey } from '@/composables/useChecklistState'
 
 defineProps<{ protocol: Protocol }>()
+
+/**
+ * kind → классы заголовка секции: левая «рельса» и подчёркивание берут цвет
+ * токена типа. Только литералы — Tailwind v4 не видит вычисленных имён
+ * классов (тот же приём, что в CriteriaListBlock).
+ *
+ * `default` намеренно нейтрален: цвет тут — сигнал, а сигнал, который горит
+ * всегда, ничего не сообщает.
+ */
+const KIND_HEADING_STYLES = {
+  default: 'border-l-border border-b-border text-fg',
+  inclusion: 'border-l-inclusion border-b-inclusion/40 text-inclusion',
+  'exclusion-absolute':
+    'border-l-exclusion-absolute border-b-exclusion-absolute/40 text-exclusion-absolute',
+  'exclusion-relative':
+    'border-l-exclusion-relative border-b-exclusion-relative/40 text-exclusion-relative',
+} as const satisfies Record<SectionKind, string>
+
+/** Незнакомый тип секции (данные новее кода) — нейтрально, без догадок. */
+function headingStyle(section: Section): string {
+  const kind = section.kind ?? 'default'
+  return Object.hasOwn(KIND_HEADING_STYLES, kind)
+    ? KIND_HEADING_STYLES[kind]
+    : KIND_HEADING_STYLES.default
+}
 
 /**
  * Пропсы конкретного блока. Всем — `block`; чек-листу дополнительно координаты
@@ -43,11 +70,13 @@ function blockElementKey(section: Section, block: Block, blockIndex: number): st
       v-for="section in protocol.sections"
       :id="section.id"
       :key="section.id"
-      class="scroll-mt-20"
+      class="scroll-under-chrome"
       :data-section-kind="section.kind ?? 'default'"
     >
-      <!-- T027 (Phase 4): цвет заголовка/рамки по data-section-kind -->
-      <h2 class="mb-3 border-b border-border pb-1.5 text-base font-semibold text-fg">
+      <h2
+        class="mb-3 border-b border-l-4 pb-1.5 pl-2.5 text-base font-semibold"
+        :class="headingStyle(section)"
+      >
         {{ section.title }}
       </h2>
 

@@ -96,3 +96,26 @@
   min-height: var(--spacing-touch);
   min-width: var(--spacing-touch);
 }
+
+/*
+  Смещения закреплённой обвязки (шапка + лента секций).
+
+  Обе переменные ПУБЛИКУЕТ JS (composables/useStickyChrome.ts) — это реально
+  измеренные высоты элементов, а не константы: правка паддингов или шрифта
+  шапки автоматически меняет и точку прилипания ленты, и якорный отступ секций.
+  Fallback 0px нужен там, где обвязки нет вовсе (главный экран, тест без
+  layout-движка) — тогда утилиты просто ничего не компенсируют.
+*/
+
+/** Лента секций прилипает ровно под шапку — без нахлёста и без щели. */
+@utility sticky-under-header {
+  position: sticky;
+  top: var(--app-header-height, 0px);
+}
+
+/** Якорь секции останавливается под всей обвязкой, а не под ней. */
+@utility scroll-under-chrome {
+  scroll-margin-top: calc(
+    var(--app-header-height, 0px) + var(--section-nav-height, 0px) + 0.5rem
+  );
+}

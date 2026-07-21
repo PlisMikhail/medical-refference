@@ -10,13 +10,17 @@
  * Ни одна ветка не даёт белого экрана (FR-014): загрузка, любая из трёх
  * ошибок и «протокол не отдал данных» имеют явное состояние с путём назад.
  *
- * Phase 4: T025/T026 добавят sticky-навигацию по секциям над ProtocolMeta.
+ * Phase 4 (T026): между метаданными и рендерером стоит ProtocolSectionNav —
+ * закреплённая лента секций. Она прилипает под шапкой приложения и остаётся
+ * видимой из любой точки прокрутки (FR-003), в том числе в самом низу
+ * документа; секции при этом получают отступ якоря под всю обвязку.
  */
 import { computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import ProtocolMeta from '@/components/ProtocolMeta.vue'
 import ProtocolRenderer from '@/components/ProtocolRenderer.vue'
+import ProtocolSectionNav from '@/components/ProtocolSectionNav.vue'
 import { provideChecklistState } from '@/composables/useChecklistState'
 import { useDevValidation } from '@/composables/useDevValidation'
 import type { ProtocolErrorCode } from '@/composables/useProtocols'
@@ -100,7 +104,15 @@ watch(
         </ul>
       </div>
 
-      <ProtocolRenderer class="mt-6" :protocol="protocol" />
+      <!--
+        FR-003: один тап до любой секции из любой точки прокрутки. Лента
+        стоит здесь, а не над метаданными, чтобы прилипать сразу над
+        содержимым; переход делает scrollIntoView, адрес маршрута
+        (`#/protocol/:id`) при этом не трогается — хеш занят роутером.
+      -->
+      <ProtocolSectionNav class="mt-5" :sections="protocol.sections" />
+
+      <ProtocolRenderer class="mt-5" :protocol="protocol" />
     </template>
 
     <p v-else class="text-sm text-fg-muted" data-testid="protocol-empty">

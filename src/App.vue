@@ -9,7 +9,19 @@
  *   - Phase 5 (T029) DisclaimerGate — оверлей до любого контента (FR-009);
  *   - Phase 7 (T036) UpdateBanner — явное обновление SW (конституция IV).
  */
+import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+
+import { useChromeHeight } from '@/composables/useStickyChrome'
+
+/**
+ * Шапка закреплена (sticky top-0 z-10), а лента секций протокола должна
+ * прилипать РОВНО под ней. Вместо константы в двух местах публикуем реально
+ * измеренную высоту шапки в CSS-переменную `--app-header-height`: изменится
+ * вёрстка шапки — смещение ленты и якорей поедет за ней само.
+ */
+const headerEl = ref<HTMLElement | null>(null)
+useChromeHeight(headerEl, 'header')
 </script>
 
 <template>
@@ -25,6 +37,7 @@ import { RouterLink, RouterView } from 'vue-router'
     -->
 
     <header
+      ref="headerEl"
       class="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
     >
       <div class="mx-auto flex w-full max-w-screen-sm items-center gap-3 px-4 py-3">
