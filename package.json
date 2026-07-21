@@ -10,6 +10,7 @@
     "test": "vitest run",
     "type-check": "vue-tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "validate:data": "node scripts/validate-protocols.mjs",
+    "verify:transcription": "node scripts/verify-transcription.mjs",
     "gen:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

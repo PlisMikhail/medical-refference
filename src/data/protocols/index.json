@@ -2,6 +2,12 @@
   "$schema": "../schema/index.schema.json",
   "protocols": [
     {
+      "id": "tlt-ischemic-stroke",
+      "title": "ТЛТ при ишемическом инсульте",
+      "version": "1.0.0-draft",
+      "sourceDate": "2026-01-05"
+    },
+    {
       "id": "demo-protocol",
       "title": "Демонстрационный протокол (образец структуры)",
       "version": "0.1.0-demo",
