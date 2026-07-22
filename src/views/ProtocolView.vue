@@ -99,42 +99,70 @@ watch(
     <template v-else-if="protocol">
       <h1 class="text-lg leading-snug font-semibold text-fg">{{ protocol.title }}</h1>
 
-      <!-- FR-002 / конституция V: прослеживаемость видна всегда -->
-      <ProtocolMeta class="mt-3" :protocol="protocol" />
-
       <!--
-        DEV-рубеж: если данные не сходятся со схемой, показываем это на экране,
-        а не только в консоли. В прод-сборке issues всегда пуст.
+        Фича 004. На широком экране навигация уезжает в левую колонку, поиск и
+        содержимое остаются в правой; на узком — сетки нет вовсе и всё идёт
+        одной колонкой, как раньше.
+
+        Порядок в разметке (поиск → навигация → содержимое) СОХРАНЁН, а колонки
+        расставлены явными координатами сетки. Иначе на узком экране навигация
+        встала бы над поиском — то есть поменялась бы принятая врачом мобильная
+        раскладка ради удобства десктопной.
+
+        Ширина колонок: оглавление 15rem, текст ровно 40rem — та же ширина,
+        что и на пределе мобильной раскладки. Освободившееся место монитора
+        уходит в поля, а не в длину строки: длинная строка читается хуже
+        короткой, а в контенте есть позиции почти на 900 знаков
+        (research.md § R5).
       -->
-      <div
-        v-if="issues.length > 0"
-        class="mt-3 rounded-lg border border-warning/60 bg-surface p-3 text-xs"
-        data-testid="dev-validation"
-      >
-        <p class="font-medium text-warning">Данные не соответствуют схеме (dev):</p>
-        <ul class="mt-1 flex flex-col gap-0.5 text-fg-muted">
-          <li v-for="issue in issues" :key="`${issue.file}${issue.instancePath}${issue.message}`">
-            {{ issue.file }} {{ issue.instancePath }} — {{ issue.message }}
-          </li>
-        </ul>
+      <div class="lg:grid lg:grid-cols-[15rem_minmax(0,40rem)] lg:items-start lg:gap-x-8">
+        <!--
+          FR-002 / конституция V: прослеживаемость видна всегда.
+
+          На широком экране блок уезжает в правую колонку, а не остаётся во всю
+          ширину над сеткой. Причина не в красоте: пока метаданные занимали
+          верх страницы целиком, оглавление начиналось на 300px ниже, и два
+          последних пункта из тринадцати уходили под нижний край окна — то есть
+          ровно то, ради чего фича делалась, не выполнялось на первом экране.
+        -->
+        <ProtocolMeta class="mt-3 lg:col-start-2 lg:row-start-1 lg:mt-5" :protocol="protocol" />
+
+        <!--
+          DEV-рубеж: если данные не сходятся со схемой, показываем это на экране,
+          а не только в консоли. В прод-сборке issues всегда пуст.
+        -->
+        <div
+          v-if="issues.length > 0"
+          class="mt-3 rounded-lg border border-warning/60 bg-surface p-3 text-xs lg:col-start-2 lg:row-start-2"
+          data-testid="dev-validation"
+        >
+          <p class="font-medium text-warning">Данные не соответствуют схеме (dev):</p>
+          <ul class="mt-1 flex flex-col gap-0.5 text-fg-muted">
+            <li v-for="issue in issues" :key="`${issue.file}${issue.instancePath}${issue.message}`">
+              {{ issue.file }} {{ issue.instancePath }} — {{ issue.message }}
+            </li>
+          </ul>
+        </div>
+
+        <!--
+          FR-008: поиск остаётся на экране при прокрутке — кнопки
+          «дальше/назад» нужны именно тогда, когда документ уже уехал
+          к очередному совпадению.
+        -->
+        <ProtocolSearch class="mt-5 lg:col-start-2 lg:row-start-3" />
+
+        <!--
+          FR-003: один тап (клик) до любой секции из любой точки прокрутки.
+          Переход делает scrollIntoView, адрес маршрута (`#/protocol/:id`)
+          при этом не трогается — хеш занят роутером.
+        -->
+        <ProtocolSectionNav
+          :sections="protocol.sections"
+          class="lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:mt-5"
+        />
+
+        <ProtocolRenderer class="mt-5 lg:col-start-2 lg:row-start-4" :protocol="protocol" />
       </div>
-
-      <!--
-        FR-008: поиск живёт над лентой секций и остаётся на экране при
-        прокрутке — кнопки «дальше/назад» нужны именно тогда, когда документ
-        уже уехал к очередному совпадению.
-      -->
-      <ProtocolSearch class="mt-5" />
-
-      <!--
-        FR-003: один тап до любой секции из любой точки прокрутки. Лента
-        стоит здесь, а не над метаданными, чтобы прилипать сразу над
-        содержимым; переход делает scrollIntoView, адрес маршрута
-        (`#/protocol/:id`) при этом не трогается — хеш занят роутером.
-      -->
-      <ProtocolSectionNav :sections="protocol.sections" />
-
-      <ProtocolRenderer class="mt-5" :protocol="protocol" />
     </template>
 
     <p v-else class="text-sm text-fg-muted" data-testid="protocol-empty">

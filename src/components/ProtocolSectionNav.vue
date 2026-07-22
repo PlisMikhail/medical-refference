@@ -20,10 +20,25 @@
  */
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
+import { useWideScreen } from '@/composables/useMediaQuery'
 import { chromeHeight, useChromeHeight } from '@/composables/useStickyChrome'
 import type { Section, SectionKind } from '@/types/protocol'
 
 const props = defineProps<{ sections: Section[] }>()
+
+/**
+ * Раскладка (фича 004). На широком экране лента чипов заменяется вертикальным
+ * оглавлением: тринадцать секций помещаются целиком, и нужная выбирается без
+ * предварительного поиска чипа.
+ *
+ * В DOM живёт РОВНО ОДНО представление, а не два спрятанных стилями — иначе
+ * каждая секция оказалась бы в документе дважды (research.md § R2).
+ *
+ * Вся логика ниже — подсветка активной секции, переход по клику — общая для
+ * обоих представлений. Различается только разметка: раздваивать поведение
+ * значило бы завести второй набор багов.
+ */
+const isWide = useWideScreen()
 
 /**
  * kind → классы чипа. Только строковые литералы: Tailwind v4 собирает лишь те
@@ -56,7 +71,16 @@ const navEl = ref<HTMLElement | null>(null)
 const stripEl = ref<HTMLElement | null>(null)
 const activeId = ref('')
 
-// Публикуем собственную высоту: из неё складывается scroll-margin-top секций.
+/**
+ * Публикуем собственную высоту: из неё складывается scroll-margin-top секций.
+ *
+ * ВАЖНО: `navEl` привязан ТОЛЬКО к горизонтальной ленте. В режиме оглавления
+ * навигация уезжает вбок и над содержимым её больше нет — значит и в отступ
+ * якоря она входить не должна. Ссылка там остаётся пустой, композабл публикует
+ * ноль, отступ уменьшается сам. Привяжи её к сайдбару — и отступ вырос бы
+ * на всю высоту оглавления, а переход по клику уводил бы секцию в середину
+ * экрана (research.md § R4).
+ */
 useChromeHeight(navEl, 'section-nav')
 
 /* ------------------------------------------------------------------ */
@@ -187,6 +211,12 @@ const REVEAL_GUTTER = 16
  * Раньше чип центрировался всегда, поэтому лента ехала даже от тапа по
  * полностью видимому чипу. Теперь она стоит на месте, пока активный чип виден,
  * и сдвигается ровно настолько, чтобы показать уехавший.
+ *
+ * В режиме оглавления `stripEl` пуст, и функция выходит сразу — подтягивать
+ * там нечего: все секции видны одновременно. Если протокол когда-нибудь
+ * разрастётся настолько, что оглавление начнёт прокручиваться (страховочный
+ * `max-h` в шаблоне), активный пункт за нижним краем сам не покажется —
+ * тогда и появится повод завести вертикальный вариант этой функции.
  */
 function revealChip(id: string): void {
   const strip = stripEl.value
@@ -209,6 +239,32 @@ function revealChip(id: string): void {
 
   if (typeof strip.scrollTo === 'function') strip.scrollTo({ left, behavior: 'smooth' })
   else strip.scrollLeft = left
+}
+
+/**
+ * Прокрутка ленты колесом мыши.
+ *
+ * ЗАЧЕМ: полоса прокрутки у ленты спрятана — на телефоне она только мозолит
+ * глаза, а пальцем лента и так свайпается. С мышью же взяться было не за что
+ * вовсе: колесо крутит страницу по вертикали, а лента горизонтальная. Чипы за
+ * правым краем оказывались недостижимы — на тринадцати секциях это половина
+ * ленты. Полоса прокрутки возвращена для точных указателей (см. шаблон), плюс
+ * колесо здесь переводится в горизонтальную прокрутку.
+ *
+ * `preventDefault` — ТОЛЬКО если лента реально поехала. На краях и на
+ * неперполненной ленте событие остаётся странице: иначе колесо над лентой
+ * молча переставало листать документ, что хуже исходной проблемы.
+ */
+function onWheel(event: WheelEvent): void {
+  const strip = stripEl.value
+  if (!strip || strip.scrollWidth <= strip.clientWidth) return
+
+  // Трекпады и горизонтальные колёса шлют deltaX сами — им мешать не нужно.
+  if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return
+
+  const before = strip.scrollLeft
+  strip.scrollLeft += event.deltaY
+  if (strip.scrollLeft !== before) event.preventDefault()
 }
 
 /**
@@ -256,21 +312,63 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!--
+    ШИРОКИЙ ЭКРАН: вертикальное оглавление сбоку (FR-001).
+
+    Липнет под шапкой — панель поиска стоит в соседней колонке и над ним
+    не находится, поэтому `sticky-under-header`, а не `-under-search`.
+    `max-h` + `overflow-y-auto` — страховка на случай протокола с очень
+    большим числом секций: тринадцать помещаются свободно, сорок бы уехали
+    за нижний край экрана.
+  -->
   <nav
+    v-if="isWide"
+    aria-label="Секции протокола"
+    class="sticky-under-header max-h-[calc(100dvh-var(--app-header-height,0px)-2rem)] overflow-y-auto py-1"
+    data-testid="section-nav"
+    data-nav-layout="sidebar"
+  >
+    <ul class="flex flex-col gap-1 p-0.5">
+      <li v-for="section in sections" :key="section.id">
+        <button
+          type="button"
+          class="w-full rounded-lg border px-3 py-2 text-left text-sm leading-snug"
+          :class="[chipStyle(section), activeId === section.id ? ACTIVE_CHIP_STYLE : '']"
+          :data-section-chip="section.id"
+          :data-chip-kind="section.kind ?? 'default'"
+          :aria-current="activeId === section.id ? 'true' : undefined"
+          @click="goToSection(section)"
+        >
+          {{ section.title }}
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- УЗКИЙ ЭКРАН: прежняя лента чипов, без изменений в поведении (FR-002). -->
+  <nav
+    v-else
     ref="navEl"
     aria-label="Секции протокола"
     class="sticky-under-search z-5 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
     data-testid="section-nav"
+    data-nav-layout="strip"
   >
     <!--
       `p-0.5` — место для обводки активного чипа. `overflow-x-auto` по спеке
       лишает контейнер вертикального `visible`, поэтому внешняя обводка
       (`ring-2`) обрезалась бы снизу и сверху, а у крайних чипов — по бокам.
       Отступ равен толщине обводки: чипы сдвигаются на 2px, срез уходит.
+
+      Полоса прокрутки: спрятана для грубых указателей (палец — лента и так
+      свайпается, полоса только съедала бы высоту) и ВОЗВРАЩЕНА для точных.
+      Мышью иначе не за что взяться: чипы за правым краем были недостижимы.
+      Колесо переводится в горизонтальную прокрутку обработчиком выше.
     -->
     <div
       ref="stripEl"
-      class="relative flex gap-2 overflow-x-auto overscroll-x-contain p-0.5 [scrollbar-width:none]"
+      class="relative flex gap-2 overflow-x-auto overscroll-x-contain p-0.5 [@media(pointer:coarse)]:[scrollbar-width:none] [@media(pointer:fine)]:[scrollbar-width:thin]"
+      @wheel="onWheel"
     >
       <button
         v-for="section in sections"

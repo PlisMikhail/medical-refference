@@ -2,6 +2,12 @@
 /**
  * Каркас приложения: mobile-first тёмный layout (целевой viewport ~380px).
  *
+ * Фича 004: на экранах от 1024px контейнер расширяется до 57rem — ровно под
+ * сетку экрана протокола (оглавление 15rem + промежуток 2rem + колонка текста
+ * 40rem). Шире не делаем: свободная ширина монитора уходит в поля, а не в длину
+ * строки. Порог здесь — единственное место, где он записан классом Tailwind,
+ * а не берётся из composables/useMediaQuery.ts; значение обязано совпадать.
+ *
  * Медицинского контента здесь нет и не будет — весь протокольный текст
  * приходит из src/data/protocols/*.json (конституция III). Единственная проза
  * в этом файле — дисклеймер, и та импортирована константой из
@@ -58,7 +64,7 @@ const { accepted, accept } = useDisclaimer()
         ref="headerEl"
         class="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       >
-        <div class="mx-auto flex w-full max-w-screen-sm items-center gap-3 px-4 py-3">
+        <div class="mx-auto flex w-full max-w-screen-sm lg:max-w-[57rem] items-center gap-3 px-4 py-3">
           <RouterLink
             to="/"
             class="flex items-center text-base font-semibold tracking-tight text-fg"
@@ -68,11 +74,11 @@ const { accepted, accept } = useDisclaimer()
         </div>
       </header>
 
-      <main class="mx-auto w-full max-w-screen-sm grow px-4 py-5">
+      <main class="mx-auto w-full max-w-screen-sm lg:max-w-[57rem] grow px-4 py-5">
         <RouterView />
       </main>
 
-      <footer class="mx-auto w-full max-w-screen-sm px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
+      <footer class="mx-auto w-full max-w-screen-sm lg:max-w-[57rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
         <!-- Та же строка, что в гейте: один источник — constants/disclaimer.ts -->
         <p class="text-center text-xs text-fg-subtle" data-testid="footer-disclaimer">
           {{ DISCLAIMER_TEXT }}
