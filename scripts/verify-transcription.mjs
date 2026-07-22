@@ -50,6 +50,11 @@ const TARGETS = [
     source: 'source-documents/protocol.txt',
     exemptions: 'specs/002-tlt-memo/transcription-exemptions.json',
   },
+  {
+    protocol: 'src/data/protocols/vste-ischemic-stroke.json',
+    source: 'source-documents/protocol.txt',
+    exemptions: 'specs/003-thrombectomy-memo/transcription-exemptions.json',
+  },
 ]
 
 /**
